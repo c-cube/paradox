@@ -44,7 +44,7 @@ import System.IO.Unsafe
 {-
 newtype Str = Str String
   deriving ( Eq, Ord )
-  
+
 str = Str
 
 instance Show Str where
@@ -53,7 +53,7 @@ instance Show Str where
 ---------------------------------------------------------------------------
 -- str spec that maintains same order
 -- {-
-data Str = Str String [Int] 
+data Str = Str String [Int]
 
 str :: String -> Str
 str s = Str s c
@@ -80,7 +80,7 @@ data Str
 
 instance Show Str where
   show (MkAtom _ _ s) = s
- 
+
 instance Eq Str where
   MkAtom i1 _ _ == MkAtom i2 _ _ = i1 == i2
 
@@ -111,7 +111,7 @@ str =
               case M.lookup s t of
                 Just at ->
                   do return at
-                
+
                 Nothing ->
                   do n <- readIORef cnt
                      let n' = n+1
@@ -124,7 +124,7 @@ str =
 -- hash stuff
 
 hash :: Int -> [Int] -> Int
-hash p []     = 0
+hash _ []     = 0
 hash p (i:is) = i + p * hash p is
 
 primes, bigprimes :: [Int]

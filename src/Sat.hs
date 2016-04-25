@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Sat
   ( S             -- :: * -> *; Functor, Monad
   , Lit           -- :: *; Eq, Ord, Show
@@ -59,13 +61,27 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -}
 
+import Foreign.C.Types       ( CInt(..) )
+import Foreign.C.String      ( CString, withCString )
+import Foreign.Ptr           ( Ptr, FunPtr, nullPtr )
+import Foreign.ForeignPtr    ( ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr )
+import Foreign.Storable      ( peek )
+import Foreign.Marshal.Array ( withArray0, peekArray0 )
+import Foreign.Marshal.Alloc ( malloc, free )
 import System.IO             ( FilePath )
-import Data.IORef            ( IORef, modifyIORef, newIORef )
+import Foreign.Storable      ( Storable )
 import Control.Exception     ( finally )
 import System.Random
-import MiniSat
+
 
 import Form                  ( Signed(..), the, sign )
+
+
+newLoc :: Int -> S Loc
+newLoc p = lift $ do
+  ptr  <- loc_new (fromIntegral p)
+  fptr <- newForeignPtr loc_free ptr
+  return (Loc fptr)
 
 addClauses :: Maybe Int -> [Int] -> [Signed Atm] -> S ()
 addClauses mn d ls = MiniSatM (\s -> addClauses_ mn d ls s)
@@ -96,14 +112,20 @@ getLit atom = MiniSatM $ \s -> do
 ----------------------------------------------------------------------------------
 -- Monad
 
-newtype S a    = MiniSatM (Solver -> LocCount -> IO a)
+newtype Solver = Solver (Ptr ())
+newtype S a    = MiniSatM (Solver -> IO a)
+
+instance Applicative S where
+  pure x =
+    MiniSatM (const (return x))
+
+  MiniSatM f <*> MiniSatM x =
+    MiniSatM (\s -> f s <*> x s)
 
 instance Monad S where
-  return x =
-    MiniSatM (\ _ _ -> return x)
 
   MiniSatM f >>= g =
-    MiniSatM (\s r -> f s r >>= \x -> case g x of { MiniSatM m -> m s r })
+    MiniSatM (\s -> f s >>= \x -> case g x of { MiniSatM m -> m s })
 
 instance Functor S where
   fmap f (MiniSatM g) = MiniSatM (fmap f . g)
@@ -115,11 +137,8 @@ newtype Lit
   = Lit CInt
  deriving (Eq, Num, Ord, Storable)
 
-newtype Loc = Loc { locArity:: Int, locId:: Int }
+newtype Loc = Loc (ForeignPtr ())
  deriving ( Eq, Show )
-
--- used to generate fresh names for Loc
-newtype LocCount = LocCount (IORef Int)
 
 data Arg
   = ArgV Int
@@ -141,13 +160,6 @@ instance Read Lit where
 
 mkTrue  = Lit 1
 mkFalse = -mkTrue
-
--------------------------------------
--- arity -> loc
-newLoc :: Int -> S Loc
-newLoc p = lift $ do
-  swapMVar
-
 
 ----------------------------------------------------------------------------------------------------
 -- MiniSatM functions

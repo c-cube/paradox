@@ -1,0 +1,5 @@
+*.hi
+*.o*
+*.a
+dist
+src/paradox

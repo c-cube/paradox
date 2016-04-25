@@ -56,7 +56,7 @@ instance Show Type where
     showEq Half = "_eq"
     showEq Full = "_heq"
     showEq _    = ""
-    
+
     showSize Nothing  = ""
     showSize (Just n) = "_" ++ show n
 
@@ -221,12 +221,12 @@ showsOps op unit xs  = showString "("
 
 mapOverTerms :: (Term -> Term) -> Form -> Form
 mapOverTerms f (Atom (t1 :=: t2)) = Atom ((f t1) :=: (f t2))
-mapOverTerms f form               = mapOverAtoms (mapOverTerms f) form 
+mapOverTerms f form                = mapOverAtoms (mapOverTerms f) form
 
 mapOverAtoms :: (Form -> Form) -> Form -> Form
 mapOverAtoms f (Not form)     = Not (f (mapOverAtoms f form))
 mapOverAtoms f (And fs)       = And $ S.map (mapOverAtoms f) fs
-mapOverAtoms f (Or fs)        = Or  $ S.map (mapOverAtoms f) fs
+mapOverAtoms f (Or fs)         = Or  $ S.map (mapOverAtoms f) fs
 mapOverAtoms f (Equiv f1 f2)  = Equiv (mapOverAtoms f f1) (mapOverAtoms f f2)
 mapOverAtoms f (Exists (Bind b form)) = Exists (Bind b (mapOverAtoms f form))
 mapOverAtoms f (ForAll (Bind b form)) = ForAll (Bind b (mapOverAtoms f form))
@@ -297,7 +297,7 @@ p .=> q = nt p \/ q
 
 (/\), (\/) :: Form -> Form -> Form
 And as /\ And bs = And (as `S.union` bs)
-a      /\ b 
+a      /\ b
   | a == false   = false
   | b == false   = false
 And as /\ b      = And (b `S.insert` as)
@@ -325,11 +325,11 @@ forAll, exists :: Symbol -> Form -> Form
 --forAll x a = ForAll (Bind x a)
 --exists x a = Exists (Bind x a)
 
-forAll v a = 
+forAll v a =
   case positive a of
     And as ->
       And (S.map (forAll v) as)
-    
+
     ForAll (Bind w a)
       | v == w    -> ForAll (Bind w a)
       | otherwise -> ForAll (Bind w (forAll v a))
@@ -353,8 +353,8 @@ forAll v a =
     --a | v `member` vs -> ForAll (v `delete` vs) v a
     --  | otherwise     -> a
     -- where
-    --  vs = free a 
-   
+    --  vs = free a
+
 exists v a = nt (forAll v (nt a))
 
 positive :: Form -> Form
@@ -374,7 +374,7 @@ simple a                   = a
 ----------------------------------------------------------------------
 -- substitution
 
-data Subst 
+data Subst
   = Subst
   { vars :: Set Symbol
   , mapp :: Map Symbol Term
@@ -475,26 +475,26 @@ instance (Symbolic a, Symbolic b) => Symbolic (a,b) where
 instance Symbolic a => Symbolic (Signed a) where
   symbols (Pos x) = symbols x
   symbols (Neg x) = symbols x
-  
+
   free (Pos x) = free x
   free (Neg x) = free x
-  
+
   subterms (Pos x) = subterms x
   subterms (Neg x) = subterms x
-  
+
   subst' sub (Pos x) = Pos `fmap` subst' sub x
   subst' sub (Neg x) = Neg `fmap` subst' sub x
 
 instance Symbolic a => Symbolic [a] where
   symbols []     = S.empty
   symbols (x:xs) = symbols (x,xs)
-  
+
   free []     = S.empty
   free (x:xs) = free (x,xs)
-  
+
   subterms []     = S.empty
   subterms (x:xs) = subterms (x,xs)
-  
+
   subst' sub []     = Nothing
   subst' sub (x:xs) = uncurry (:) `fmap` subst' sub (x,xs)
 
@@ -575,7 +575,7 @@ instance Symbolic a => Symbolic (Bind a) where
   subst sub (Bind v a) = Bind v' (subst (Subst vs' mp') a)
    where
     Subst vs mp = sub
-   
+
     forbidden = vs `S.union` free a
 
     allowed   = [ v'
@@ -583,7 +583,7 @@ instance Symbolic a => Symbolic (Bind a) where
                 , v' <- v
                       : [ name [c] ::: t | c <- ['V'..'Z'] ]
                      ++ [ (n % i) ::: t | i <- [0..] ]
-                , not (v' `S.member` forbidden) 
+                , not (v' `S.member` forbidden)
                 ]
 
     v'        = head allowed
@@ -600,11 +600,11 @@ instance Symbolic a => Symbolic (Bind a) where
                   , w /= v'
                   ]
                 )
--}  
+-}
   subst' sub (Bind v a) = Bind v' `fmap` subst' (Subst vs' mp') a
    where
     Subst vs mp = sub
-   
+
     forbidden = vs `S.union` (S.delete v (free a))
 
     allowed   = [ v'
@@ -612,7 +612,7 @@ instance Symbolic a => Symbolic (Bind a) where
                 , v' <- v
                      -- : [ name [c] ::: t | c <- ['V'..'Z'] ]
                       : [ (n % i) ::: t | i <- [0..] ]
-                , not (v' `S.member` forbidden) 
+                , not (v' `S.member` forbidden)
                 ]
 
     v'        = head allowed
