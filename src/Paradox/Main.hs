@@ -62,8 +62,7 @@ import System.Exit
 main :: IO ()
 main =
   do putStrLn "Paradox, version 4.0, 2010-06-29."
-     --putStrLn "*** NOTE: THIS IS A NON-STANDARD, DELIBERATELY UNSOUND VERSION!"
-     Main.main Paradox solveProblem
+     Main.mainGen Paradox solveProblem
 
 -------------------------------------------------------------------------
 -- problem

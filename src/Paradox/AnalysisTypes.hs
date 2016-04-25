@@ -311,10 +311,11 @@ instance Applicative (T s) where
       ok x
     )
 
-  a <*> b =
-    do a1 <- a
-       b1 <- b
-       return (a1 b1)
+  MkT a <*> MkT b =
+    MkT (\ids preds funs vars fail ok ->
+      a ids preds funs vars fail (\a1 ->
+        b ids preds funs vars fail (\b1 -> ok (a1 b1)))
+      )
 
 instance Monad (T s) where
 

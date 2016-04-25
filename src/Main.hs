@@ -37,8 +37,8 @@ import Output
 ---------------------------------------------------------------------------
 -- main
 
-main :: Tool -> (Flags -> [Clause] -> [Clause] -> IO ClauseAnswer) -> IO ()
-main tool solveProblem =
+mainGen :: Tool -> (Flags -> [Clause] -> [Clause] -> IO ClauseAnswer) -> IO ()
+mainGen tool solveProblem =
   do hSetBuffering stdout LineBuffering
      flags <- getFlags tool
 
@@ -48,9 +48,9 @@ main tool solveProblem =
         s <- readFile flist
         return $ lines s)
 
-     let flags = flags{ files = files flags ++ problems }
+     let flags' = flags{ files = files flags ++ problems }
 
-     case time flags of
+     case time flags' of
        Just n ->
          do timeoutVar <- newEmptyMVar
 
@@ -67,8 +67,8 @@ main tool solveProblem =
               then do killThread pid1
                       putInfo ""
                       putWarning ("TIMEOUT (" ++ show n ++ " seconds)")
-                      let flags = flags{ thisFile = unwords (files flags) }
-                      putResult flags (show Timeout)
+                      let flags'' = flags'{ thisFile = unwords (files flags') }
+                      putResult flags'' (show Timeout)
               else do killThread pid2
 
        Nothing ->
