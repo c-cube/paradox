@@ -72,7 +72,7 @@ mainGen tool solveProblem =
               else do killThread pid2
 
        Nothing ->
-         do main' flags solveProblem
+         do main' flags' solveProblem
 
 main' :: Flags -> (Flags -> [Clause] -> [Clause] -> IO ClauseAnswer) -> IO ()
 main' flags solveProblem =
@@ -87,20 +87,20 @@ main' flags solveProblem =
             --sequence_ [ print inp | inp <- ins ]
             let (theory,obligs) = clausify flags ins
                 n               = length obligs
-            let flags          = flags{ thisFile = file }
+            let flags'          = flags{ thisFile = file }
             --sequence_ [ print t | t <- theory ]
 
             putOfficial ("SOLVING: " ++ file)
             case obligs of
               -- Satisfiable/Unsatisfiable
               [] ->
-                do ans <- solveProblem flags theory []
-                   putResult flags (show ans)
+                do ans <- solveProblem flags' theory []
+                   putResult flags' (show ans)
 
               -- CounterSatisfiable/Theorem
               [oblig] ->
-                do ans <- solveProblem flags theory oblig
-                   putResult flags (show (toConjectureAnswer ans))
+                do ans <- solveProblem flags' theory oblig
+                   putResult flags' (show (toConjectureAnswer ans))
 
               -- Unknown/Theorem
               obligs ->
@@ -109,14 +109,14 @@ main' flags solveProblem =
 
                        solveAll i (oblig:obligs) =
                          do putSubHeader ("Part " ++ show i ++ "/" ++ show n)
-                            ans <- solveProblem flags theory oblig
+                            ans <- solveProblem flags' theory oblig
                             putOfficial ("PARTIAL (" ++ show i ++ "/" ++ show n ++ "): " ++ show (toConjectureAnswer ans))
                             case ans of
                               Unsatisfiable -> solveAll (i+1) obligs
                               _             -> return (NoAnswerConjecture GaveUp)
 
                    ans <- solveAll 1 obligs
-                   putResult flags (show ans)
+                   putResult flags' (show ans)
        | file <- files flags
        ]
 
