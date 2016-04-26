@@ -29,3 +29,10 @@ mk-instantiate:
 mk-haskell:
 	make -C $(HASKELL)
 
+
+BUILD_DIR=dist/build/paradox/
+
+pre-install: main
+	mkdir -p $(BUILD_DIR)
+	cp src/paradox $(BUILD_DIR)
+
